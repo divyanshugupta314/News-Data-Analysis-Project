@@ -1,11 +1,11 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
-from fetch_news import fetch_news_data
+#from fetch_news import fetch_news_data
 from airflow.contrib.operators.snowflake_operator import SnowflakeOperator
 
 default_args = {
-    'owner': 'growdataskills',
+    'owner': 'divyanshu',
     'depends_on_past': False,
     'email_on_failure': False,
     'email_on_retry': False,
@@ -22,11 +22,11 @@ dag = DAG(
     catchup=False,
 )
 
-fetch_news_data_task = PythonOperator(
-    task_id='newsapi_data_to_gcs',
-    python_callable=fetch_news_data,
-    dag=dag,
-)
+# fetch_news_data_task = PythonOperator(
+#     task_id='newsapi_data_to_gcs',
+#     python_callable=fetch_news_data,
+#     dag=dag,
+# )
 
 snowflake_create_table = SnowflakeOperator(
     task_id="snowflake_create_table",
@@ -50,4 +50,4 @@ snowflake_copy = SnowflakeOperator(
     snowflake_conn_id="snowflake_conn"
 )
 
-fetch_news_data_task >> snowflake_create_table >> snowflake_copy
+snowflake_create_table >> snowflake_copy
