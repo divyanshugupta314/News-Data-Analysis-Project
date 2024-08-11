@@ -1,7 +1,6 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
-#from fetch_news import fetch_news_data
 from airflow.contrib.operators.snowflake_operator import SnowflakeOperator
 
 default_args = {
@@ -22,11 +21,6 @@ dag = DAG(
     catchup=False,
 )
 
-# fetch_news_data_task = PythonOperator(
-#     task_id='newsapi_data_to_gcs',
-#     python_callable=fetch_news_data,
-#     dag=dag,
-# )
 
 snowflake_create_table = SnowflakeOperator(
     task_id="snowflake_create_table",
@@ -34,10 +28,11 @@ snowflake_create_table = SnowflakeOperator(
                 SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*))
                 FROM TABLE(INFER_SCHEMA (
                     LOCATION => '@news_api.PUBLIC.gcs_raw_data_stage',
-                    FILE_FORMAT => 'parquet_format'
+                    FILE_FORMAT => 'parquet_format_csv1'
                 ))
             )""",
-    snowflake_conn_id="snowflake_conn"
+    snowflake_conn_id="snowflake_conn",
+    dag=dag
 )
 
 snowflake_copy = SnowflakeOperator(
@@ -45,7 +40,7 @@ snowflake_copy = SnowflakeOperator(
     sql="""COPY INTO news_api.PUBLIC.news_api_data 
             FROM @news_api.PUBLIC.gcs_raw_data_stage
             MATCH_BY_COLUMN_NAME=CASE_INSENSITIVE 
-            FILE_FORMAT = (FORMAT_NAME = 'parquet_format') 
+            FILE_FORMAT = (FORMAT_NAME = 'parquet_format_csv1')
             """,
     snowflake_conn_id="snowflake_conn"
 )
